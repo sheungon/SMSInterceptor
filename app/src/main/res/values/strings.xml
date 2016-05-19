@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">SMSInterceptor</string>
+    <string name="hint_base_url">Base URL (e.g. http://localhost:8080/)</string>
+    <string name="hint_server_api">Server API (e.g. api/sms)</string>
+    <string name="title_main">Forward SMS to :</string>
+    <string name="title_status">Status</string>
+    <string name="error_input">Cannot be empty!</string>
+    <string name="unknown">Unknown</string>
+    <string name="stopped">Stopped</string>
+    <string name="running">Running</string>
+    <string name="clear_log">Clear Log</string>
+    <string name="error_permissions_missing">Missing some permissions. Please restart the app and grant all needed permissions.</string>
+    <string name="error_read_log">!!!ERROR ON READ LOG!!!</string>
+</resources>
