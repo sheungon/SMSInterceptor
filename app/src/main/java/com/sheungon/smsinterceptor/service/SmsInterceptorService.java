@@ -9,7 +9,7 @@ import android.support.annotation.Nullable;
  *
  * @author John
  */
-public class SmsInterceptorService extends Service {
+public class SMSInterceptorService extends Service {
 
 
     @Nullable

@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".service.SmsInterceptorService" />
+        <service android:name=".service.SMSInterceptorService" />
 
         <receiver
             android:name=".SMSReceiver"
