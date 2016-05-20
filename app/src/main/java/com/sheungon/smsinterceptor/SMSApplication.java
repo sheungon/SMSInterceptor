@@ -5,7 +5,11 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import com.sheungon.smsinterceptor.service.SMSInterceptorSettings;
+import com.sheungon.smsinterceptor.util.FileUtil;
+import com.sheungon.smsinterceptor.util.LogcatUtil;
 import com.sheungon.smsinterceptor.util.PrivatePrefUtil;
+
+import java.io.File;
 
 /**
  * @author John
@@ -28,6 +32,11 @@ public class SMSApplication extends Application {
         super.onCreate();
 
         PrivatePrefUtil.init(this);
+
+        File logFile = FileUtil.getLogFile();
+        if (logFile != null) {
+            LogcatUtil.startLogcatAt(this, logFile);
+        }
 
         updateReceiver();
     }

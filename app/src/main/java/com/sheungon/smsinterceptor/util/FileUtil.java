@@ -47,13 +47,13 @@ public class FileUtil {
 
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Error on read file : " + file, e);
         } finally {
             if (br != null) {
                 try {
                     br.close();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("Error on close read file : " + file, e);
                 }
             }
         }
