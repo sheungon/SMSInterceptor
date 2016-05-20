@@ -1,14 +1,13 @@
 package com.sheungon.smsinterceptor;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
-import android.os.Bundle;
+import android.content.pm.PackageManager;
 import android.provider.Telephony;
-import android.telephony.SmsMessage;
 
-import com.sheungon.smsinterceptor.util.Log;
+import com.sheungon.smsinterceptor.service.SMSInterceptorService;
 
 /**
  * Listen for incoming SMS
@@ -17,8 +16,7 @@ import com.sheungon.smsinterceptor.util.Log;
  */
 public class SMSReceiver extends BroadcastReceiver {
 
-    public static final String PDUS = "pdus";
-
+    private static final ComponentName SMS_RECEIVER_COMPONENT = new ComponentName(SMSApplication.getInstance(), SMSReceiver.class);
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -26,38 +24,31 @@ public class SMSReceiver extends BroadcastReceiver {
         switch (intent.getAction()) {
             case Telephony.Sms.Intents.SMS_RECEIVED_ACTION: {
 
-                SmsMessage[] smsMessages;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    smsMessages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
-                } else {
-                    final Bundle bundle = intent.getExtras();
-                    if (bundle != null) {
-
-                        final Object[] pdus = (Object[]) intent.getSerializableExtra(PDUS);
-
-                        int pduCount = pdus.length;
-                        smsMessages = new SmsMessage[pduCount];
-
-                        for (int i = 0; i < pduCount; i++) {
-                            byte[] pdu = (byte[]) pdus[i];
-                            //noinspection deprecation
-                            smsMessages[i] = SmsMessage.createFromPdu(pdu);
-                        }
-                    } else {
-                        Log.e("No bundle SMS received action?!");
-                        return;
-                    }
-                }
-
-                // Log the SMS
-                for (SmsMessage smsMessage : smsMessages) {
-                    String phoneNumber = smsMessage.getDisplayOriginatingAddress();
-                    Log.d("Got SMS from [" + phoneNumber + "] : " + smsMessage.getDisplayMessageBody());
-                }
-
-                // TODO send the SMS to server
+                // Forward to service to handle
+                SMSApplication app = SMSApplication.getInstance();
+                intent.setClass(app, SMSInterceptorService.class);
+                app.startService(intent);
 
             } break;
         }
+    }
+
+    public static boolean isReceiverEnabled() {
+
+        SMSApplication app = SMSApplication.getInstance();
+        int status = app.getPackageManager().getComponentEnabledSetting(SMS_RECEIVER_COMPONENT);
+
+        return status == PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+    }
+
+    public static void enableReceiver(boolean enable) {
+
+        SMSApplication app = SMSApplication.getInstance();
+
+        int newState = enable ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+
+        app.getPackageManager().setComponentEnabledSetting(SMS_RECEIVER_COMPONENT,
+                        newState,
+                        PackageManager.DONT_KILL_APP);
     }
 }

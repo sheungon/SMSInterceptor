@@ -2,7 +2,9 @@ package com.sheungon.smsinterceptor;
 
 import android.app.Application;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
+import com.sheungon.smsinterceptor.service.SMSInterceptorSettings;
 import com.sheungon.smsinterceptor.util.PrivatePrefUtil;
 
 /**
@@ -26,5 +28,15 @@ public class SMSApplication extends Application {
         super.onCreate();
 
         PrivatePrefUtil.init(this);
+
+        updateReceiver();
+    }
+
+    private void updateReceiver() {
+
+        if (TextUtils.isEmpty(SMSInterceptorSettings.getServerApi()) ||
+                TextUtils.isEmpty(SMSInterceptorSettings.getServerBaseUrl())) {
+            SMSReceiver.enableReceiver(false);
+        }
     }
 }

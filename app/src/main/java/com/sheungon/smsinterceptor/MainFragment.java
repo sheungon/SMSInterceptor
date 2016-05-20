@@ -14,8 +14,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.sheungon.smsinterceptor.service.SMSInterceptorSettings;
 import com.sheungon.smsinterceptor.util.FileUtil;
-import com.sheungon.smsinterceptor.util.PrivatePrefUtil;
 import com.sheungon.smsinterceptor.util.UIUtil;
 
 import java.io.File;
@@ -32,10 +32,6 @@ import butterknife.Unbinder;
  */
 public class MainFragment extends Fragment {
 
-    private static final String KEY_SERVER_BASE_URL = "ServerBaseUrl";
-    private static final String KEY_SERVER_API = "ServerAPI";
-
-
     private static final ButterKnife.Setter<View, Boolean> BK_ENABLE = new ButterKnife.Setter<View, Boolean>() {
         @Override public void set(@NonNull View view, Boolean enable, int index) {
             if (!enable) {
@@ -44,6 +40,11 @@ public class MainFragment extends Fragment {
             view.setEnabled(enable);
         }
     };
+
+    private static final String REGEX_HTTP_PROTOCOL = "^[Hh][Tt][Tt][Pp][Ss]?://.+";
+    public static final String SLASH = "/";
+    public static final String REGEX_START_SLASH = "^/+";
+
 
     @BindView(R.id.base_url) EditText mBaseUrl;
     @BindView(R.id.server_api) EditText mServerAPI;
@@ -72,11 +73,11 @@ public class MainFragment extends Fragment {
 
         mUnbinder = ButterKnife.bind(this, view);
 
-        mBaseUrl.setText(PrivatePrefUtil.getString(KEY_SERVER_BASE_URL, ""));
-        mServerAPI.setText(PrivatePrefUtil.getString(KEY_SERVER_API, ""));
+        mBaseUrl.setText(SMSInterceptorSettings.getServerBaseUrl());
+        mServerAPI.setText(SMSInterceptorSettings.getServerApi());
 
-        // TODO get service runing state
-        boolean serviceRunning = true;
+        // Get and show service state
+        boolean serviceRunning = SMSReceiver.isReceiverEnabled();
         mIgnoreToggle = true;
         mServiceBtn.setChecked(serviceRunning);
         mIgnoreToggle = false;
@@ -125,13 +126,18 @@ public class MainFragment extends Fragment {
         }
 
         if (isChecked) {
+            String baseUrl = null;
+            String serverApi = null;
+
             // Validate input
             FragmentActivity activity = getActivity();
             if (activity != null) {
                 UIUtil.hideSoftKeyboard(activity);
             }
 
-            boolean inputMissing = false;
+            boolean inputInvalid = false;
+
+            // Empty check
             String errorMsg = null;
             for (EditText inputView : mInputViews) {
                 String input = inputView.getText().toString();
@@ -141,22 +147,46 @@ public class MainFragment extends Fragment {
                     }
                     inputView.setError(errorMsg);
 
-                    if (!inputMissing) {
+                    if (!inputInvalid) {
                         // Focus to the first missing input
                         inputView.requestFocus();
-                        inputMissing = true;
+                        inputInvalid = true;
                     }
                 }
             }
 
-            if (inputMissing) {
+            // Validate input
+            if (!inputInvalid) {
+                baseUrl = mBaseUrl.getText().toString();
+                if (!baseUrl.matches(REGEX_HTTP_PROTOCOL)) {
+                    mBaseUrl.setError(getString(R.string.error_base_url_invalid_format));
+                    mBaseUrl.requestFocus();
+                    inputInvalid = true;
+                }
+                if (!baseUrl.endsWith(SLASH)) {
+                    baseUrl += SLASH;
+                    mBaseUrl.setText(baseUrl);
+                }
+            }
+            serverApi = mServerAPI.getText().toString();
+            serverApi = serverApi.replaceAll(REGEX_START_SLASH, "");
+            mServerAPI.setText(serverApi);
+
+            if (inputInvalid) {
                 toggleButton.setChecked(false);
                 return;
             }
+
+            // Save the setting
+            SMSInterceptorSettings.setServerApi(serverApi);
+            SMSInterceptorSettings.setServerBaseUrl(baseUrl);
         }
 
         // Update view state
         ButterKnife.apply(mInputViews, BK_ENABLE, !isChecked);
+
+        // Update Receiver
+        SMSReceiver.enableReceiver(isChecked);
     }
 
     boolean isViewReleased() {
