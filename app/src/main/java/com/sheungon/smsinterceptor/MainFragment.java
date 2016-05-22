@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -55,6 +56,7 @@ public class MainFragment extends Fragment {
     @BindView(R.id.server_api) EditText mServerAPI;
     @BindView(R.id.btn_toggle_service) ToggleButton mServiceBtn;
     @BindView(R.id.log) TextView mLogView;
+    @BindView(R.id.scroll_view_log) ScrollView mScrollViewLog;
 
     @BindViews({R.id.base_url, R.id.server_api})
     EditText[] mInputViews;
@@ -269,6 +271,17 @@ public class MainFragment extends Fragment {
         StringBuilder logContentBuilder = new StringBuilder();
         FileUtil.readTextFile(logFile, logContentBuilder);
         mLogView.setText(logContentBuilder);
+
+        // Force log scroll view to the bottom
+        mScrollViewLog.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (isViewReleased()) {
+                    return;
+                }
+                mScrollViewLog.fullScroll(View.FOCUS_DOWN);
+            }
+        }, 200);
     }
 
 
