@@ -7,10 +7,9 @@ import android.os.IBinder;
 import android.provider.Telephony;
 import android.support.annotation.Nullable;
 import android.telephony.SmsMessage;
+import android.util.SparseArray;
 
 import com.sheungon.smsinterceptor.util.Log;
-
-import java.util.HashMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -24,7 +23,7 @@ public class SMSInterceptorService extends Service {
 
     public static final String PDUS = "pdus";
 
-    private final HashMap<Integer, Call<Object>> mRetrofitTasks = new HashMap<>();
+    private final SparseArray<Call<Object>> mRetrofitTasks = new SparseArray<>();
 
 
     @Override
