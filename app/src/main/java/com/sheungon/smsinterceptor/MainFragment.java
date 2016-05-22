@@ -16,15 +16,20 @@ import android.widget.ToggleButton;
 
 import com.sheungon.smsinterceptor.service.SMSInterceptorSettings;
 import com.sheungon.smsinterceptor.util.FileUtil;
+import com.sheungon.smsinterceptor.util.Log;
+import com.sheungon.smsinterceptor.util.LogcatUtil;
 import com.sheungon.smsinterceptor.util.UIUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.OnCheckedChanged;
+import butterknife.OnClick;
 import butterknife.Unbinder;
 
 /**
@@ -83,6 +88,10 @@ public class MainFragment extends Fragment {
         mIgnoreToggle = false;
         ButterKnife.apply(mInputViews, BK_ENABLE, !serviceRunning);
 
+        // Show logcat log
+        updateLogView();
+
+        // Monitor logcat log file
         File logFile = FileUtil.getLogFile();
         if (logFile != null) {
             mLogObserver = new MyFileObserver(this,
@@ -193,6 +202,43 @@ public class MainFragment extends Fragment {
         return mUnbinder == null;
     }
 
+    @SuppressWarnings("unused")
+    @OnClick(R.id.btn_clear_log)
+    void onClickClearLog() {
+
+        File logFile = FileUtil.getLogFile();
+        if (logFile == null) {
+            Log.w("No logfile?!");
+            return;
+        }
+
+        SMSApplication app = SMSApplication.getInstance();
+        LogcatUtil.stopLogcat(app);
+
+        // Clear log file
+        if (logFile.isFile() &&
+                logFile.canWrite()) {
+            PrintWriter writer = null;
+            try {
+                writer = new PrintWriter(logFile);
+                writer.print("");
+            } catch (FileNotFoundException e) {
+                Log.e("Error on write to log file", e);
+            } finally {
+                if (writer != null) {
+                    try {
+                        writer.close();
+                    } catch (Exception e) {
+                        // Do nothing
+                    }
+                }
+            }
+            Log.d("Log file cleared.");
+        }
+
+        LogcatUtil.resetLogcat(app, logFile);
+    }
+
     @UiThread
     private void updateLogView() {
 
@@ -210,7 +256,13 @@ public class MainFragment extends Fragment {
         if (logFile == null ||
                 !logFile.isFile() ||
                 !logFile.canRead()) {
-            mLogView.setText(R.string.error_read_log);
+            if (logFile != null &&
+                    !logFile.isFile()) {
+                // Log file not yet created
+                mLogView.setText("");
+            } else {
+                mLogView.setText(R.string.error_read_log);
+            }
             return;
         }
 
@@ -257,10 +309,8 @@ public class MainFragment extends Fragment {
             switch (event) {
                 case FileObserver.MODIFY:
                 case FileObserver.CLOSE_WRITE:
-                    activity.runOnUiThread(mUpdateLogTask);
-                    break;
-
                 case FileObserver.DELETE:
+                    activity.runOnUiThread(mUpdateLogTask);
                     break;
             }
         }

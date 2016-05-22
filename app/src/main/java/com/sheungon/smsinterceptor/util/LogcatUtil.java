@@ -12,6 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * A class to run log cat so record current app's log
@@ -24,7 +28,13 @@ public class LogcatUtil {
     public static final String LOGCAT_MAX_NO_OF_LOG_FILES = "1";
 
     private static final String LOG_TAG = "LogcatUtil";
-    private static final String APP_LINUX_USER_NAME = "AppLinuxUserName";
+
+    private static final String PREF_KEY_APP_LINUX_USER_NAME = "AppLinuxUserName";
+    private static final String PREF_KEY_LOGCAT_SINCE = "LogcatSince";
+
+    private static final String LOGCAT_BEGIN_OF_TIME = "01-01 00:00:00.000";
+
+    private static final SimpleDateFormat LOGCAT_SINCE_FORMAT = new SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US);
 
     private static final String REGEX_COLUMN_SEPARATOR = "(\\s+[SR]?\\s+|\\s+)";
 
@@ -58,6 +68,7 @@ public class LogcatUtil {
                 "-r", LOGCAT_FILE_SIZE,
                 "-n", LOGCAT_MAX_NO_OF_LOG_FILES,
                 "-v", LOGCAT_FORMAT,
+                "-T", PrivatePrefUtil.getString(PREF_KEY_LOGCAT_SINCE, LOGCAT_BEGIN_OF_TIME),
                 "*:S", SMSApplication.LOG_TAG);
         processBuilder.redirectErrorStream(true);
         try {
@@ -73,7 +84,7 @@ public class LogcatUtil {
 
     /**
      * Stop any running logcat instance
-     * @return {@code true} if a logcat instance is stopped by this.
+     * @return {@code true} if a logcat can be stopped by this. Or no logcat process was running.
      * */
     public static boolean stopLogcat(@NonNull Context context) {
 
@@ -83,9 +94,15 @@ public class LogcatUtil {
         }
 
         String pid = getLogcatPIDRunningBy(username);
+        if (pid == null) {
+            return true;
+        }
+
         ProcessBuilder processBuilder = new ProcessBuilder("kill", pid);
+        Log.d(Arrays.toString(processBuilder.command().toArray()));
         try {
             Process process = processBuilder.start();
+            process.waitFor();
             int exitCode = process.exitValue();
             Log.v(LOG_TAG, "Stopped logcat exit code : " + exitCode);
             return true;
@@ -97,12 +114,33 @@ public class LogcatUtil {
     }
 
     /**
+     * Reset and start to print log since now only
+     *
+     * @param logFile The designation of the log file.
+     *
+     * @return {@code true} if a logcat process created successfully or a logcat process already running before.
+     * */
+    public static boolean resetLogcat(@NonNull Context context,
+                                      @NonNull File logFile) {
+
+        String logcatSince = LOGCAT_SINCE_FORMAT.format(new Date());
+
+        boolean logcatStopped = stopLogcat(context);
+        Log.d("Logcat stopped : " + logcatStopped);
+
+        PrivatePrefUtil.set(PREF_KEY_LOGCAT_SINCE, logcatSince);
+        Log.d("Reset logcat since : " + logcatSince);
+
+        return startLogcatAt(context, logFile);
+    }
+
+    /**
      * @return The app executed by which Linux user.
      * */
     @Nullable
     private static String getAppRunByUser(@NonNull Context context) {
 
-        String myUserName = PrivatePrefUtil.getString(APP_LINUX_USER_NAME);
+        String myUserName = PrivatePrefUtil.getString(PREF_KEY_APP_LINUX_USER_NAME);
 
         if (TextUtils.isEmpty(myUserName)) {
             String packageName = context.getPackageName();
@@ -168,7 +206,7 @@ public class LogcatUtil {
                     Log.e(LOG_TAG, "Cannot find the owner of current app...");
                 } else {
                     // Cache the user name in preference as it remind the same since installed
-                    PrivatePrefUtil.set(APP_LINUX_USER_NAME, myUserName);
+                    PrivatePrefUtil.set(PREF_KEY_APP_LINUX_USER_NAME, myUserName);
                 }
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error on reading output from 'ps'", e);
