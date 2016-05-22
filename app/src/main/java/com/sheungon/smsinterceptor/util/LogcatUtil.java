@@ -170,9 +170,9 @@ public class LogcatUtil {
                     // Don't care
                 }
                 try {
-                    ps.exitValue();
-                } catch (IllegalThreadStateException e) {
-                    Log.e("Error reporter IllegalThreadStateException", e);
+                    ps.destroy();
+                } catch (Exception e) {
+                    Log.e("Error on destroy ps", e);
                 }
             }
         }
@@ -248,9 +248,9 @@ public class LogcatUtil {
                 // Don't care
             }
             try {
-                ps.exitValue();
-            } catch (IllegalThreadStateException e) {
-                Log.e("Error reporter IllegalThreadStateException", e);
+                ps.destroy();
+            } catch (Exception e) {
+                Log.e("Error on destroy ps", e);
             }
         }
 
