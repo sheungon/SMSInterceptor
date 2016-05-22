@@ -5,6 +5,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.sheungon.smsinterceptor.SMSApplication;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -21,9 +23,10 @@ public class LogcatUtil {
     public static final String LOGCAT_FORMAT = "threadtime";
     public static final String LOGCAT_MAX_NO_OF_LOG_FILES = "1";
 
+    private static final String LOG_TAG = "LogcatUtil";
     private static final String APP_LINUX_USER_NAME = "AppLinuxUserName";
 
-    private static final String REGEX_SPACE_GAP = "\\s+";
+    private static final String REGEX_COLUMN_SEPARATOR = "(\\s+[SR]?\\s+|\\s+)";
 
     private static final String PS_COL_USER = "USER";
     private static final String PS_COL_PID = "PID";
@@ -43,6 +46,7 @@ public class LogcatUtil {
         if (username == null) {
             return false;
         }
+        Log.v(LOG_TAG, "App running by : " + username);
 
         if (isLogcatRunningBy(username)) {
             return true;
@@ -53,14 +57,15 @@ public class LogcatUtil {
                 "-f", logFile.getAbsolutePath(),
                 "-r", LOGCAT_FILE_SIZE,
                 "-n", LOGCAT_MAX_NO_OF_LOG_FILES,
-                "-v", LOGCAT_FORMAT);
+                "-v", LOGCAT_FORMAT,
+                "*:S", SMSApplication.LOG_TAG);
         processBuilder.redirectErrorStream(true);
         try {
             processBuilder.start();
-            Log.v("Started logcat");
+            Log.v(LOG_TAG, "Started logcat");
             return true;
         } catch (Exception e) {
-            Log.e("Error on starting logcat", e);
+            Log.e(LOG_TAG, "Error on starting logcat", e);
         }
 
         return false;
@@ -82,10 +87,10 @@ public class LogcatUtil {
         try {
             Process process = processBuilder.start();
             int exitCode = process.exitValue();
-            Log.v("Stopped logcat exit code : " + exitCode);
+            Log.v(LOG_TAG, "Stopped logcat exit code : " + exitCode);
             return true;
         } catch (Exception e) {
-            Log.e("Error on kill logcat", e);
+            Log.e(LOG_TAG, "Error on kill logcat", e);
         }
 
         return false;
@@ -101,7 +106,7 @@ public class LogcatUtil {
 
         if (TextUtils.isEmpty(myUserName)) {
             String packageName = context.getPackageName();
-            Log.d("Retrieving application username. ApplicationPackage = " + packageName);
+            Log.d(LOG_TAG, "Retrieving application username. ApplicationPackage = " + packageName);
 
             /*Don't user `grep` as it could be not available on some devices.*/
             // Execute `ps`
@@ -110,7 +115,7 @@ public class LogcatUtil {
             try {
                 ps = psBuilder.start();
             } catch (IOException e) {
-                Log.e("Not able to run command on this device!!!", e);
+                Log.e(LOG_TAG, "Not able to run command on this device!!!", e);
                 return null;
             }
 
@@ -119,50 +124,54 @@ public class LogcatUtil {
             BufferedReader bf = new BufferedReader(new InputStreamReader(is));
             try {
 
-                Log.d("======`ps` output start======");
+                Log.d(LOG_TAG, "======`ps` output start======");
 
                 // Read the first line and find the target column
                 String line = bf.readLine();
                 if (line == null) {
-                    Log.e("'ps' no output?!");
+                    Log.e(LOG_TAG, "'ps' no output?!");
                     return null;
                 }
-                Log.d(line);
+                Log.d(LOG_TAG, line);
 
                 // Split by space
-                String[] columns = line.split(REGEX_SPACE_GAP);
-                int nameColumn = 0;
-                for (; ; nameColumn++) {
-                    if (nameColumn >= columns.length) {
-                        Log.e("Cannot find column `NAME` in ps response");
-                        return null;
+                String[] columns = line.split(REGEX_COLUMN_SEPARATOR);
+                int userColumn = -1;
+                int nameColumn = -1;
+                for (int i = 0; i < columns.length; i++) {
+                    if (PS_COL_USER.equalsIgnoreCase(columns[i])) {
+                        userColumn = i;
+                    } else if (PS_COL_NAME.equalsIgnoreCase(columns[i])) {
+                        nameColumn = i;
                     }
-                    if (PS_COL_NAME.equalsIgnoreCase(columns[nameColumn])) {
-                        break;
-                    }
+                }
+                if (userColumn == -1 ||
+                        nameColumn == -1) {
+                    Log.e(LOG_TAG, "Some column cannot be found from output.");
+                    return null;
                 }
 
                 while ((line = bf.readLine()) != null) {
-                    Log.d(line);
+                    Log.d(LOG_TAG, line);
                     // Split by space
-                    columns = line.split(REGEX_SPACE_GAP);
+                    columns = line.split(REGEX_COLUMN_SEPARATOR);
 
                     if (packageName.equals(columns[nameColumn])) {
-                        myUserName = columns[nameColumn];
-                        Log.d("Application username = " + myUserName);
+                        myUserName = columns[userColumn];
+                        Log.d(LOG_TAG, "Application executed by user : " + myUserName);
                         break;
                     }
                 }
-                Log.d("======`ps` output end======");
+                Log.d(LOG_TAG, "======`ps` output end======");
 
                 if (TextUtils.isEmpty(myUserName)) {
-                    Log.e("Cannot find the owner of current app...");
+                    Log.e(LOG_TAG, "Cannot find the owner of current app...");
                 } else {
                     // Cache the user name in preference as it remind the same since installed
                     PrivatePrefUtil.set(APP_LINUX_USER_NAME, myUserName);
                 }
             } catch (IOException e) {
-                Log.e("Error on reading output from 'ps'", e);
+                Log.e(LOG_TAG, "Error on reading output from 'ps'", e);
             } finally {
                 try {
                     is.close();
@@ -172,7 +181,7 @@ public class LogcatUtil {
                 try {
                     ps.destroy();
                 } catch (Exception e) {
-                    Log.e("Error on destroy ps", e);
+                    Log.e(LOG_TAG, "Error on destroy ps", e);
                 }
             }
         }
@@ -183,6 +192,8 @@ public class LogcatUtil {
     @Nullable
     private static String getLogcatPIDRunningBy(@NonNull String user) {
 
+        String pid = null;
+
         /*Don't user `grep` as it could be not available on some devices.*/
         // Execute `ps logcat` to find all logcat process
         ProcessBuilder processBuilder = new ProcessBuilder("ps", "logcat");
@@ -190,7 +201,7 @@ public class LogcatUtil {
         try {
             ps = processBuilder.start();
         } catch (IOException e) {
-            Log.e("Not able to run command on this device!!!", e);
+            Log.e(LOG_TAG, "Not able to run command on this device!!!", e);
             return null;
         }
 
@@ -199,18 +210,18 @@ public class LogcatUtil {
         BufferedReader bf = new BufferedReader(new InputStreamReader(is));
         try {
 
-            Log.d("======`ps logcat` output start======");
+            Log.d(LOG_TAG, "======`ps logcat` output start======");
 
             // Read the first line and find the target column
             String line = bf.readLine();
             if (line == null) {
-                Log.e("'ps' no output?!");
+                Log.e(LOG_TAG, "'ps' no output?!");
                 return null;
             }
-            Log.d(line);
+            Log.d(LOG_TAG, line);
 
             // Split by space
-            String[] columns = line.split(REGEX_SPACE_GAP);
+            String[] columns = line.split(REGEX_COLUMN_SEPARATOR);
             int userColumn = -1;
             int pidColumn = -1;
             for (int i = 0; i < columns.length; i++) {
@@ -222,25 +233,24 @@ public class LogcatUtil {
             }
             if (userColumn == -1 ||
                     pidColumn == -1) {
-                Log.e("Some column cannot be found from output.");
+                Log.e(LOG_TAG, "Some column cannot be found from output.");
                 return null;
             }
 
             while ((line = bf.readLine()) != null) {
-                Log.d(line);
+                Log.d(LOG_TAG, line);
                 // Split by space
-                columns = line.split(REGEX_SPACE_GAP);
+                columns = line.split(REGEX_COLUMN_SEPARATOR);
 
                 if (user.equals(columns[userColumn])) {
                     // Found the current user's process
-                    String pid = columns[pidColumn];
-                    Log.v("Logcat is already running by user [" + user + "] pid : " + pid);
-                    return pid;
+                    pid = columns[pidColumn];
+                    Log.v(LOG_TAG, "Logcat is already running by user [" + user + "] pid : " + pid);
                 }
             }
-            Log.d("======`ps logcat` output end======");
+            Log.d(LOG_TAG, "======`ps logcat` output end======");
         } catch (IOException e) {
-            Log.e("Error on reading output from 'ps'", e);
+            Log.e(LOG_TAG, "Error on reading output from 'ps'", e);
         } finally {
             try {
                 is.close();
@@ -250,11 +260,11 @@ public class LogcatUtil {
             try {
                 ps.destroy();
             } catch (Exception e) {
-                Log.e("Error on destroy ps", e);
+                Log.e(LOG_TAG, "Error on destroy ps", e);
             }
         }
 
-        return null;
+        return pid;
     }
 
     private static boolean isLogcatRunningBy(@NonNull String user) {
