@@ -73,15 +73,21 @@
         android:layout_height="wrap_content"
         android:text="@string/clear_log"/>
 
-    <android.support.v4.widget.NestedScrollView
+    <ScrollView
+        android:id="@+id/scroll_view_log"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:scrollbars="vertical"
+        android:scrollbarStyle="outsideInset"
+        android:fadeScrollbars="false">
 
         <TextView
             android:id="@+id/log"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:textColor="#222222"
+            android:textSize="14sp"/>
 
-    </android.support.v4.widget.NestedScrollView>
+    </ScrollView>
 
 </LinearLayout>
