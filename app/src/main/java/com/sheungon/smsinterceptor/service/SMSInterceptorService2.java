@@ -20,7 +20,7 @@ import retrofit2.Response;
  *
  * @author John
  */
-public class SMSInterceptorService extends Service {
+public class SMSInterceptorService2 extends Service {
 
     public static final String PDUS = "pdus";
 
@@ -109,7 +109,7 @@ public class SMSInterceptorService extends Service {
         // FIXME remove this after implemented Retrofit
         boolean result = stopSelfResult(startId);
         if (result) {
-            Log.d("SMSInterceptorService stopped.");
+            Log.d("SMSInterceptorService2 stopped.");
         }
 
         return START_REDELIVER_INTENT;
@@ -146,7 +146,7 @@ public class SMSInterceptorService extends Service {
             mRetrofitTasks.remove(mStartId);
             boolean result = stopSelfResult(mStartId);
             if (result) {
-                Log.d("SMSInterceptorService stopped.");
+                Log.d("SMSInterceptorService2 stopped.");
             }
         }
     }
