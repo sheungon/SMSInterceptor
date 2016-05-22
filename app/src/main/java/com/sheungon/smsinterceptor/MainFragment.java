@@ -310,6 +310,7 @@ public class MainFragment extends Fragment {
                 case FileObserver.MODIFY:
                 case FileObserver.CLOSE_WRITE:
                 case FileObserver.DELETE:
+                case FileObserver.DELETE_SELF:
                     activity.runOnUiThread(mUpdateLogTask);
                     break;
             }
