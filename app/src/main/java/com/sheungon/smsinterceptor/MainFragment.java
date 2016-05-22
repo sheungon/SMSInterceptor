@@ -138,7 +138,7 @@ public class MainFragment extends Fragment {
 
         if (isChecked) {
             String baseUrl = null;
-            String serverApi = null;
+            String serverApi;
 
             // Validate input
             FragmentActivity activity = getActivity();
