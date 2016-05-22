@@ -207,7 +207,9 @@ public class MainFragment extends Fragment {
         }
 
         File logFile = FileUtil.getLogFile();
-        if (logFile == null) {
+        if (logFile == null ||
+                !logFile.isFile() ||
+                !logFile.canRead()) {
             mLogView.setText(R.string.error_read_log);
             return;
         }
