@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.provider.Telephony;
 
-import com.sheungon.smsinterceptor.service.SMSInterceptorService2;
+import com.sheungon.smsinterceptor.service.SMSInterceptorService;
 
 /**
  * Listen for incoming SMS
@@ -26,7 +26,7 @@ public class SMSReceiver extends BroadcastReceiver {
 
                 // Forward to service to handle
                 SMSApplication app = SMSApplication.getInstance();
-                intent.setClass(app, SMSInterceptorService2.class);
+                intent.setClass(app, SMSInterceptorService.class);
                 app.startService(intent);
 
             } break;
