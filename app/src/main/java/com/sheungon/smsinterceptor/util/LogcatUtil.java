@@ -36,7 +36,7 @@ public class LogcatUtil {
 
     private static final SimpleDateFormat LOGCAT_SINCE_FORMAT = new SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US);
 
-    private static final String REGEX_COLUMN_SEPARATOR = "(\\s+[SR]?\\s+|\\s+)";
+    private static final String REGEX_COLUMN_SEPARATOR = "(\\s+[A-Z]?\\s+|\\s+)";
 
     private static final String PS_COL_USER = "USER";
     private static final String PS_COL_PID = "PID";
@@ -148,7 +148,7 @@ public class LogcatUtil {
 
             /*Don't user `grep` as it could be not available on some devices.*/
             // Execute `ps`
-            ProcessBuilder psBuilder = new ProcessBuilder("ps");
+            ProcessBuilder psBuilder = new ProcessBuilder("ps", packageName);
             Process ps;
             try {
                 ps = psBuilder.start();
