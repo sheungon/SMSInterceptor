@@ -217,7 +217,8 @@ public class LogcatUtil {
                     // Don't care
                 }
                 try {
-                    ps.destroy();
+                    ps.waitFor();
+                    ps.exitValue();
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Error on destroy ps", e);
                 }
@@ -296,7 +297,8 @@ public class LogcatUtil {
                 // Don't care
             }
             try {
-                ps.destroy();
+                ps.waitFor();
+                ps.exitValue();
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error on destroy ps", e);
             }
