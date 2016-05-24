@@ -54,11 +54,14 @@ public class LogcatUtil {
 
         String username = getAppRunByUser(context);
         if (username == null) {
+            // Not starting logcat in this case to avoid repeatedly start many logcat process
+            Log.w(LOG_TAG, "Cannot start logcat due to app user is unknown.");
             return false;
         }
         Log.v(LOG_TAG, "App running by : " + username);
 
         if (isLogcatRunningBy(username)) {
+            Log.v(LOG_TAG, "logcat running already");
             return true;
         }
 

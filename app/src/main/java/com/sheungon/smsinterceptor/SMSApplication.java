@@ -40,8 +40,7 @@ public class SMSApplication extends Application {
 
         File logFile = FileUtil.getLogFile();
         if (logFile != null) {
-            boolean startedLogcat = LogcatUtil.startLogcatAt(this, logFile);
-            Log.d("Logcat started : " + startedLogcat);
+            LogcatUtil.startLogcatAt(this, logFile);
         }
 
         updateReceiver();
