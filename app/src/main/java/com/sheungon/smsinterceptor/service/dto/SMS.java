@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
  */
 @SuppressWarnings("unused")
 
-public class SMS2 {
+public class SMS {
 
     @SerializedName("phoneNumber")
     @Expose
@@ -17,7 +17,7 @@ public class SMS2 {
     @Expose
     private String message;
 
-    public SMS2(String phoneNumber, String message) {
+    public SMS(String phoneNumber, String message) {
         this.phoneNumber = phoneNumber;
         this.message = message;
     }
@@ -40,7 +40,7 @@ public class SMS2 {
         this.phoneNumber = phoneNumber;
     }
 
-    public SMS2 withPhoneNumber(String phoneNumber) {
+    public SMS withPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
         return this;
     }
@@ -63,7 +63,7 @@ public class SMS2 {
         this.message = message;
     }
 
-    public SMS2 withMessage(String message) {
+    public SMS withMessage(String message) {
         this.message = message;
         return this;
     }

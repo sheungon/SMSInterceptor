@@ -9,7 +9,7 @@ import android.support.annotation.Nullable;
 import android.telephony.SmsMessage;
 import android.util.SparseArray;
 
-import com.sheungon.smsinterceptor.service.dto.SMS2;
+import com.sheungon.smsinterceptor.service.dto.SMS;
 import com.sheungon.smsinterceptor.service.dto.SMSGatewayReturnMessage;
 import com.sheungon.smsinterceptor.util.Log;
 import com.sheungon.smsinterceptor.util.SSLSelfSigningClientBuilder;
@@ -114,11 +114,11 @@ public class SMSInterceptorService extends Service {
             }
         }
 
-        SMS2 incomingMessage = null;
+        SMS incomingMessage = null;
         // Log the SMS
         for (SmsMessage smsMessage : smsMessages) {
             String phoneNumber = smsMessage.getDisplayOriginatingAddress();
-            incomingMessage = new SMS2(phoneNumber,smsMessage.getDisplayMessageBody());
+            incomingMessage = new SMS(phoneNumber,smsMessage.getDisplayMessageBody());
             Log.d("Got SMS from [" + phoneNumber + "] : " + smsMessage.getDisplayMessageBody());
         }
 

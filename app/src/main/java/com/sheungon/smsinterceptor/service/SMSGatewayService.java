@@ -1,7 +1,7 @@
 package com.sheungon.smsinterceptor.service;
 
 import com.sheungon.smsinterceptor.service.dto.SMSGatewayReturnMessage;
-import com.sheungon.smsinterceptor.service.dto.SMS2;
+import com.sheungon.smsinterceptor.service.dto.SMS;
 
 
 import retrofit2.Call;
@@ -14,5 +14,5 @@ import retrofit2.http.POST;
 public interface SMSGatewayService {
 
     @POST("smsgateway/receiveSms")
-    Call<SMSGatewayReturnMessage> receiveSms(@Body SMS2 sms);
+    Call<SMSGatewayReturnMessage> receiveSms(@Body SMS sms);
 }
