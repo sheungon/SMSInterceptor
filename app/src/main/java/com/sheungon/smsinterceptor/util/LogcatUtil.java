@@ -24,7 +24,7 @@ import java.util.Locale;
 public class LogcatUtil {
 
     public static final String LOGCAT_FILE_SIZE = "256"; // KB
-    public static final String LOGCAT_FORMAT = "threadtime";
+    public static final String LOGCAT_FORMAT = "time";
     public static final String LOGCAT_MAX_NO_OF_LOG_FILES = "1";
 
     private static final String LOG_TAG = "LogcatUtil";
