@@ -63,7 +63,7 @@ public class SMSInterceptorService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        // TODO release retrofit service here
+        Log.d("SMSInterceptorService onDestroy.");
     }
 
     @Override
@@ -146,14 +146,14 @@ public class SMSInterceptorService extends Service {
         @Override
         public void onResponse(Call<SMSGatewayReturnMessage> call, Response<SMSGatewayReturnMessage> response) {
 
-            Log.e("SMS Send to server : " + mStartId);
+            Log.d("SMS Send to server ID[" + mStartId + "]");
             stopSelfService();
         }
 
         @Override
         public void onFailure(Call<SMSGatewayReturnMessage> call, Throwable t) {
 
-            Log.e("Error on sending SMS to server : " + mStartId + ", error : " + t.getMessage());
+            Log.e("Error on sending SMS to server ID[" + mStartId + "] error : " + t.getMessage());
             stopSelfService();
         }
 
