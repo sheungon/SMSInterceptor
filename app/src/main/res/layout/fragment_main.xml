@@ -47,8 +47,7 @@
             android:maxLength="30"
             android:imeOptions="actionNext"
             android:inputType="textUri"
-            android:hint="@string/hint_server_api"
-            android:visibility="gone"/>
+            android:hint="@string/hint_server_api"/>
     </android.support.design.widget.TextInputLayout>
 
     <TextView

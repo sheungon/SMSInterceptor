@@ -150,21 +150,13 @@ public class MainFragment extends Fragment {
             boolean inputInvalid = false;
 
             // Empty check
-            String errorMsg = null;
-            for (EditText inputView : mInputViews) {
-                String input = inputView.getText().toString();
-                if (input.isEmpty()) {
-                    if (errorMsg == null) {
-                        errorMsg = getString(R.string.error_input);
-                    }
-                    inputView.setError(errorMsg);
+            String input = mBaseUrl.getText().toString();
+            if (input.isEmpty()) {
+                mBaseUrl.setError(getString(R.string.error_input));
 
-                    if (!inputInvalid) {
-                        // Focus to the first missing input
-                        inputView.requestFocus();
-                        inputInvalid = true;
-                    }
-                }
+                // Focus to the first missing input
+                mBaseUrl.requestFocus();
+                inputInvalid = true;
             }
 
             // Validate input
