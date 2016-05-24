@@ -161,7 +161,7 @@ public class MainFragment extends Fragment {
 
             // Validate input
             if (!inputInvalid) {
-                baseUrl = mBaseUrl.getText().toString();
+                baseUrl = mBaseUrl.getText().toString().trim();
                 if (!baseUrl.matches(REGEX_HTTP_PROTOCOL)) {
                     mBaseUrl.setError(getString(R.string.error_base_url_invalid_format));
                     mBaseUrl.requestFocus();
@@ -169,11 +169,15 @@ public class MainFragment extends Fragment {
                 }
                 if (!baseUrl.endsWith(SLASH)) {
                     baseUrl += SLASH;
-                    mBaseUrl.setText(baseUrl);
                 }
+                mBaseUrl.setText(baseUrl);
             }
-            serverApi = mServerAPI.getText().toString();
+            serverApi = mServerAPI.getText().toString().trim();
             serverApi = serverApi.replaceAll(REGEX_START_SLASH, "");
+            if (serverApi.isEmpty()) {
+                // Root URI
+                serverApi = "/";
+            }
             mServerAPI.setText(serverApi);
 
             if (inputInvalid) {
