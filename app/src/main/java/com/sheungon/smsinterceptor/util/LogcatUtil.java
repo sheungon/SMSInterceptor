@@ -148,7 +148,7 @@ public class LogcatUtil {
 
             /*Don't user `grep` as it could be not available on some devices.*/
             // Execute `ps`
-            ProcessBuilder psBuilder = new ProcessBuilder("ps", packageName);
+            ProcessBuilder psBuilder = new ProcessBuilder("ps");
             Process ps;
             try {
                 ps = psBuilder.start();
