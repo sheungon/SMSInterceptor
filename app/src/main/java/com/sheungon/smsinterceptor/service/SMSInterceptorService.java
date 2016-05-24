@@ -36,23 +36,21 @@ public class SMSInterceptorService extends Service {
 
     private final SparseArray<Call<SMSGatewayReturnMessage>> mRetrofitTasks = new SparseArray<>();
 
-    private Retrofit mRetrofit = null;
-
-    private SMSGatewayService mService = null;
+    private SMSGatewayService mSMSGatewayService = null;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // TODO Create Retrofit service here
-        mRetrofit = new Retrofit.Builder()
+        // Create Retrofit service
+        Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(SMSInterceptorSettings.getServerBaseUrl())
                 .addConverterFactory(new NullOnEmptyConverterFactory())
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(SSLSelfSigningClientBuilder.createClient())
                 .build();
 
-        mService = mRetrofit.create(SMSGatewayService.class);
+        mSMSGatewayService = retrofit.create(SMSGatewayService.class);
     }
 
     @Nullable
@@ -123,22 +121,12 @@ public class SMSInterceptorService extends Service {
         }
 
         /*
-        * TODO send SMS to server here. Remember to call stopSelfResult(startId) after sent the SMS to server
+        * Send SMS to server here. stopSelfResult(startId) will be called after sent the SMS to server
         */
-
-
-        Call<SMSGatewayReturnMessage> call = mService.receiveSms(incomingMessage);
-
-        call.enqueue(new SendSMSCallback(startId));
-
+        Call<SMSGatewayReturnMessage> call = mSMSGatewayService.receiveSms(SMSInterceptorSettings.getServerApi(),
+                incomingMessage);
         mRetrofitTasks.put(startId, call);
-
-        // FIXME remove this after implemented Retrofit
-
-        boolean result = stopSelfResult(startId);
-        if (result) {
-            Log.d("SMSInterceptorService stopped.");
-        }
+        call.enqueue(new SendSMSCallback(startId));
 
         return START_REDELIVER_INTENT;
     }
