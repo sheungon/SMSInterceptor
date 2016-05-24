@@ -9,11 +9,22 @@ import android.support.annotation.Nullable;
 import android.telephony.SmsMessage;
 import android.util.SparseArray;
 
+import com.sheungon.smsinterceptor.service.dto.SMS;
+import com.sheungon.smsinterceptor.service.dto.SMSGatewayReturnMessage;
 import com.sheungon.smsinterceptor.util.Log;
+import com.sheungon.smsinterceptor.util.SSLSelfSigningClientBuilder;
 
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
+import retrofit2.Converter;
 import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  *
@@ -23,14 +34,25 @@ public class SMSInterceptorService extends Service {
 
     public static final String PDUS = "pdus";
 
-    private final SparseArray<Call<Object>> mRetrofitTasks = new SparseArray<>();
+    private final SparseArray<Call<SMSGatewayReturnMessage>> mRetrofitTasks = new SparseArray<>();
 
+    private Retrofit mRetrofit = null;
+
+    private SMSGatewayService mService = null;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         // TODO Create Retrofit service here
+        mRetrofit = new Retrofit.Builder()
+                .baseUrl(SMSInterceptorSettings.getServerBaseUrl())
+                .addConverterFactory(new NullOnEmptyConverterFactory())
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(SSLSelfSigningClientBuilder.createClient())
+                .build();
+
+        mService = mRetrofit.create(SMSGatewayService.class);
     }
 
     @Nullable
@@ -69,7 +91,7 @@ public class SMSInterceptorService extends Service {
         }
 
         if ((flags & START_FLAG_REDELIVERY) == START_FLAG_REDELIVERY) {
-            Call<Object> call = mRetrofitTasks.get(startId);
+            Call<SMSGatewayReturnMessage> call = mRetrofitTasks.get(startId);
             if (call != null &&
                     !call.isExecuted()) {
                 // The task is still pending to be executed or executing
@@ -92,20 +114,27 @@ public class SMSInterceptorService extends Service {
             }
         }
 
+        SMS incomingMessage = null;
         // Log the SMS
         for (SmsMessage smsMessage : smsMessages) {
             String phoneNumber = smsMessage.getDisplayOriginatingAddress();
+            incomingMessage = new SMS(phoneNumber,smsMessage.getDisplayMessageBody());
             Log.d("Got SMS from [" + phoneNumber + "] : " + smsMessage.getDisplayMessageBody());
         }
 
         /*
         * TODO send SMS to server here. Remember to call stopSelfResult(startId) after sent the SMS to server
-        * smsMessages to be sent
-        * */
-        /*Call<Object> call = null;
+        */
+
+
+        Call<SMSGatewayReturnMessage> call = mService.receiveSms(incomingMessage);
+
         call.enqueue(new SendSMSCallback(startId));
-        mRetrofitTasks.put(startId, call);*/
+
+        mRetrofitTasks.put(startId, call);
+
         // FIXME remove this after implemented Retrofit
+
         boolean result = stopSelfResult(startId);
         if (result) {
             Log.d("SMSInterceptorService stopped.");
@@ -118,7 +147,7 @@ public class SMSInterceptorService extends Service {
     /////////////////////////////
     // Class and interface
     /////////////////////////////
-    private class SendSMSCallback implements Callback<Object> {
+    private class SendSMSCallback implements Callback<SMSGatewayReturnMessage> {
 
         private final int mStartId;
 
@@ -127,14 +156,14 @@ public class SMSInterceptorService extends Service {
         }
 
         @Override
-        public void onResponse(Call<Object> call, Response<Object> response) {
+        public void onResponse(Call<SMSGatewayReturnMessage> call, Response<SMSGatewayReturnMessage> response) {
 
             Log.e("SMS Send to server : " + mStartId);
             stopSelfService();
         }
 
         @Override
-        public void onFailure(Call<Object> call, Throwable t) {
+        public void onFailure(Call<SMSGatewayReturnMessage> call, Throwable t) {
 
             Log.e("Error on sending SMS to server : " + mStartId + ", error : " + t.getMessage());
             stopSelfService();
@@ -147,6 +176,20 @@ public class SMSInterceptorService extends Service {
             if (result) {
                 Log.d("SMSInterceptorService stopped.");
             }
+        }
+    }
+
+    private class NullOnEmptyConverterFactory extends Converter.Factory {
+
+        @Override
+        public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
+            final Converter<ResponseBody, ?> delegate = retrofit.nextResponseBodyConverter(this, type, annotations);
+            return new Converter<ResponseBody, Object>() {
+                @Override
+                public Object convert(ResponseBody body) throws IOException {
+                    if (body.contentLength() == 0) return null;
+                    return delegate.convert(body);                }
+            };
         }
     }
 }

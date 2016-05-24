@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/text_normal"
-            android:maxLength="30"
+            android:maxLength="100"
             android:imeOptions="actionNext"
             android:inputType="textUri"
             android:hint="@string/hint_base_url">
@@ -47,7 +47,8 @@
             android:maxLength="30"
             android:imeOptions="actionNext"
             android:inputType="textUri"
-            android:hint="@string/hint_server_api"/>
+            android:hint="@string/hint_server_api"
+            android:visibility="gone"/>
     </android.support.design.widget.TextInputLayout>
 
     <TextView
