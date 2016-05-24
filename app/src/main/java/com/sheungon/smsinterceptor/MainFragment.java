@@ -91,6 +91,7 @@ public class MainFragment extends Fragment {
         ButterKnife.apply(mInputViews, BK_ENABLE, !serviceRunning);
 
         // Show logcat log
+        mLogView.setHorizontallyScrolling(true);
         updateLogView();
 
         // Monitor logcat log file
