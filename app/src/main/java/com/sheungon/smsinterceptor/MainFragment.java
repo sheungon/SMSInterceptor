@@ -54,11 +54,14 @@ public class MainFragment extends Fragment {
 
     @BindView(R.id.base_url) EditText mBaseUrl;
     @BindView(R.id.server_api) EditText mServerAPI;
+    @BindView(R.id.account_number) EditText mAccountNumber;
+    @BindView(R.id.bank_code) EditText mBankCode;
     @BindView(R.id.btn_toggle_service) ToggleButton mServiceBtn;
+    @BindView(R.id.log_path) TextView mLogPath;
     @BindView(R.id.log) TextView mLogView;
     @BindView(R.id.scroll_view_log) ScrollView mScrollViewLog;
 
-    @BindViews({R.id.base_url, R.id.server_api})
+    @BindViews({R.id.base_url, R.id.server_api, R.id.account_number, R.id.bank_code})
     EditText[] mInputViews;
 
     private boolean mIgnoreToggle = false;
@@ -82,6 +85,8 @@ public class MainFragment extends Fragment {
 
         mBaseUrl.setText(SMSInterceptorSettings.getServerBaseUrl());
         mServerAPI.setText(SMSInterceptorSettings.getServerApi());
+        mAccountNumber.setText(SMSInterceptorSettings.getAccountNumber());
+        mBankCode.setText(SMSInterceptorSettings.getBankCode());
 
         // Get and show service state
         boolean serviceRunning = SMSReceiver.isReceiverEnabled();
@@ -94,13 +99,20 @@ public class MainFragment extends Fragment {
         mLogView.setHorizontallyScrolling(true);
         updateLogView();
 
-        // Monitor logcat log file
         File logFile = FileUtil.getLogFile();
+
+        // Monitor logcat log file
         if (logFile != null) {
+            String logFilePath = logFile.getAbsolutePath();
+
             mLogObserver = new MyFileObserver(this,
-                    logFile.getPath(),
+                    logFilePath,
                     FileObserver.MODIFY | FileObserver.DELETE | FileObserver.CLOSE_WRITE);
             mLogObserver.startWatching();
+            // Show log file path
+            mLogPath.setText(logFilePath);
+        } else {
+            mLogPath.setText("");
         }
     }
 
@@ -185,9 +197,17 @@ public class MainFragment extends Fragment {
                 return;
             }
 
+            String accountNumber = mAccountNumber.getText().toString().trim();
+            String bankCode = mBankCode.getText().toString().trim();
+
+            mAccountNumber.setText(accountNumber);
+            mBankCode.setText(bankCode);
+
             // Save the setting
             SMSInterceptorSettings.setServerApi(serverApi);
             SMSInterceptorSettings.setServerBaseUrl(baseUrl);
+            SMSInterceptorSettings.setAccountNumber(accountNumber);
+            SMSInterceptorSettings.setBankCode(bankCode);
         }
 
         // Update view state

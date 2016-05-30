@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Telephony;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.telephony.SmsMessage;
 import android.util.SparseArray;
@@ -17,6 +18,10 @@ import com.sheungon.smsinterceptor.util.SSLSelfSigningClientBuilder;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -112,23 +117,50 @@ public class SMSInterceptorService extends Service {
             }
         }
 
-        SMS incomingMessage = null;
         // Log the SMS
+        Map<String, StringBuilder> smsMap = new HashMap<>();
         for (SmsMessage smsMessage : smsMessages) {
+
             String phoneNumber = smsMessage.getDisplayOriginatingAddress();
-            incomingMessage = new SMS(phoneNumber,smsMessage.getDisplayMessageBody());
-            Log.d("Got SMS from [" + phoneNumber + "] : " + smsMessage.getDisplayMessageBody());
+            String smsPartialBody = smsMessage.getDisplayMessageBody();
+
+            StringBuilder smsBodyBuilder = smsMap.get(phoneNumber);
+            if (smsBodyBuilder == null) {
+                smsBodyBuilder = new StringBuilder();
+                smsMap.put(phoneNumber, smsBodyBuilder);
+            }
+            smsBodyBuilder.append(smsPartialBody);
+
+            Log.d("Got SMS from [" + phoneNumber + "] : " + smsPartialBody);
         }
 
-        /*
-        * Send SMS to server here. stopSelfResult(startId) will be called after sent the SMS to server
-        */
-        Call<SMSGatewayReturnMessage> call = mSMSGatewayService.receiveSms(SMSInterceptorSettings.getServerApi(),
-                incomingMessage);
-        mRetrofitTasks.put(startId, call);
-        call.enqueue(new SendSMSCallback(startId));
+        Set<String> keySet = smsMap.keySet();
+        if (keySet.isEmpty()) {
+            Log.w("No sms ?!");
+            stopSelfResult(startId);
+        } else {
+
+            Iterator<String> iterator = keySet.iterator();
+            String firstPhoneNumber = iterator.next();
+            forwardSMS(startId, smsMap, firstPhoneNumber);
+        }
 
         return START_REDELIVER_INTENT;
+    }
+
+    private void forwardSMS(int startId,
+                            @NonNull Map<String, StringBuilder> smsMap,
+                            @NonNull String phoneNumber) {
+
+        String smsBody = smsMap.remove(phoneNumber).toString();
+        SMS incomingMessage = new SMS(phoneNumber, smsBody);
+        incomingMessage.setAccountNumber(SMSInterceptorSettings.getAccountNumber());
+        incomingMessage.setBankCode(SMSInterceptorSettings.getBankCode());
+
+        // Send SMS to server here. stopSelfResult(startId) will be called after sent the SMS to server
+        Call<SMSGatewayReturnMessage> call = mSMSGatewayService.receiveSms(SMSInterceptorSettings.getServerApi(), incomingMessage);
+        mRetrofitTasks.put(startId, call);
+        call.enqueue(new SendSMSCallback(startId, smsMap));
     }
 
 
@@ -138,15 +170,18 @@ public class SMSInterceptorService extends Service {
     private class SendSMSCallback implements Callback<SMSGatewayReturnMessage> {
 
         private final int mStartId;
+        @NonNull
+        private final Map<String, StringBuilder> mPendingSmsMap;
 
-        SendSMSCallback(int startId) {
+        SendSMSCallback(int startId, @NonNull Map<String, StringBuilder> pendingSmsMap) {
             mStartId = startId;
+            mPendingSmsMap = pendingSmsMap;
         }
 
         @Override
         public void onResponse(Call<SMSGatewayReturnMessage> call, Response<SMSGatewayReturnMessage> response) {
 
-            Log.d("SMS Send to server ID[" + mStartId + "]");
+            Log.d("SMS Sent. startId[" + mStartId + "]");
             stopSelfService();
         }
 
@@ -159,10 +194,17 @@ public class SMSInterceptorService extends Service {
 
         private void stopSelfService() {
 
-            mRetrofitTasks.remove(mStartId);
-            boolean result = stopSelfResult(mStartId);
-            if (result) {
-                Log.d("SMSInterceptorService stopped.");
+            Set<String> keySet = mPendingSmsMap.keySet();
+            if (keySet.isEmpty()) {
+                mRetrofitTasks.remove(mStartId);
+                boolean result = stopSelfResult(mStartId);
+                if (result) {
+                    Log.d("SMSInterceptorService stopped.");
+                }
+            } else {
+                Iterator<String> iterator = keySet.iterator();
+                String firstPhoneNumber = iterator.next();
+                forwardSMS(mStartId, mPendingSmsMap, firstPhoneNumber);
             }
         }
     }
@@ -176,7 +218,8 @@ public class SMSInterceptorService extends Service {
                 @Override
                 public Object convert(ResponseBody body) throws IOException {
                     if (body.contentLength() == 0) return null;
-                    return delegate.convert(body);                }
+                    return delegate.convert(body);
+                }
             };
         }
     }

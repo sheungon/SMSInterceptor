@@ -16,6 +16,12 @@ public class SMS {
     @SerializedName("message")
     @Expose
     private String message;
+    @SerializedName("AccountNo")
+    @Expose
+    private String accountNumber;
+    @SerializedName("BankCode")
+    @Expose
+    private String bankCode;
 
     public SMS(String phoneNumber, String message) {
         this.phoneNumber = phoneNumber;
@@ -68,4 +74,19 @@ public class SMS {
         return this;
     }
 
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
+    }
 }
