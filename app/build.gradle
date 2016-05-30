@@ -7,6 +7,11 @@ android {
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
 
+    signingConfigs{
+        debug {
+            storeFile rootProject.file('keystores/debug.keystore')
+        }
+    }
     defaultConfig {
         applicationId "com.sheungon.smsinterceptor"
         minSdkVersion 16
@@ -15,9 +20,13 @@ android {
         versionName "1.0.1"
     }
     buildTypes {
-        release {
+        debug {
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            initWith debug
         }
     }
 }
