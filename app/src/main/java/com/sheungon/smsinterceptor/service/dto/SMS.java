@@ -16,10 +16,10 @@ public class SMS {
     @SerializedName("message")
     @Expose
     private String message;
-    @SerializedName("AccountNo")
+    @SerializedName("accountNumber")
     @Expose
     private String accountNumber;
-    @SerializedName("BankCode")
+    @SerializedName("bankCode")
     @Expose
     private String bankCode;
 
